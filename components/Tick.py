@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from Status import Status
+from .Status import Status
 
 class Tick(ABC):
     def __init__(self):
@@ -19,3 +19,6 @@ class Tick(ABC):
             self._action()
         else:
             self.ticker -= 1
+
+    def print_status(self):
+        return f'status = {self.status}, ticker = {self.ticker}'
