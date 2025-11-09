@@ -1,38 +1,48 @@
-from .Tick import Tick
+from .Unit import Unit
+from .Memory import Memory
+from typing import TYPE_CHECKING, List, Tuple, Optional
+if TYPE_CHECKING:
+    from .Task import Task
+    from .TPC import TPC
 
-class GlobalWorker(Tick):
-    def __init__(self, tasks, tpcs):
-        super().__init__()
-        self.queue = tasks
-        self.tpcs = tpcs
+
+class GlobalWorker(Unit):
+    def __init__(self, name: str, tasks: List["Task"], tpcs: List["TPC"]):
+        super().__init__(name)
+        self._queue: List["Task"] = tasks
+        self.completed_tasks: List["Task"] = []
+        self._tpcs: List["TPC"] = tpcs
+        self._hbm: List[Tuple[int, int, "TPC"]] = []
 
     def _action(self):
-        print('GlobalWorker: action')
-        if len(self.queue) > 0:
-            task_to_execute = self.queue.pop(0)
-            tpc = self._find_tpc_for_task(task_to_execute)
-            if tpc:
-                print(f'{task_to_execute} ---> {tpc}')
-                tpc.add_task(task_to_execute)
-            else:
-                print(f'{task_to_execute} ---> end of que')
-                self.queue.append(task_to_execute)  # добавляем в конец очереди, если не нашелся tpc
+        if not self._queue:
+            return
 
-    def _find_tpc_for_task(self, task_to_execute):
-        print('GlobalWorker: find_tpc_for_task')
-        suitable_tpc = None
-        for tpc in self.tpcs:
-            if tpc.addr_start is not None:
-                if ((task_to_execute.addr_start >= tpc.addr_start) |
-                        (task_to_execute.addr_start <= tpc.addr_end) |
-                        (task_to_execute.addr_end >= tpc.addr_start) |
-                        (task_to_execute.addr_end <= tpc.addr_end)):
-                    suitable_tpc = tpc
-                    return suitable_tpc
-            elif suitable_tpc is None:
-                suitable_tpc = tpc
-        return suitable_tpc
+        candidate = self._queue[0]
 
-    def __str__(self):
-        status = self.print_status()
-        return f'GlobalWorker: {status}'
+        # 1. Проверяем, есть ли уже TPC, которому принадлежит диапазон HBM
+        assigned_tpc = self._find_tpc_by_hbm_range(candidate)
+
+        # 2. Если нет, ищем наименее загруженный TPC
+        if assigned_tpc is None:
+            assigned_tpc = self._select_least_loaded_tpc()
+
+        # 3. Резервируем диапазон памяти
+        Memory.allocate(self._hbm, candidate.addr_start, candidate.addr_end, assigned_tpc)
+
+        # 4. Назначаем задачу TPC
+        assigned_tpc.add_task(self._queue.pop(0), self._on_complete_task)
+
+    def _on_complete_task(self, task: "Task"):
+        self.completed_tasks.append(task)
+
+    def _select_least_loaded_tpc(self) -> "TPC":
+        return min(self._tpcs, key=lambda t: t.get_total_task_count())
+    
+    def _find_tpc_by_hbm_range(self, task: "Task") -> Optional["TPC"]:
+        for s, e, tpc in self._hbm:
+            if Memory._ranges_overlap(task.addr_start, task.addr_end, s, e):
+                return tpc
+        return None
+
+        

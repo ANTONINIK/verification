@@ -1,24 +1,20 @@
-from enum import Enum
+from typing import TYPE_CHECKING
 
-class TaskType(Enum):
-    VPU = 'vector'
-    ME = 'matrix'
-    FE = 'activation'
+if TYPE_CHECKING:
+    from .TaskType import TaskType
 
 class Task:
-    def __init__(self, addr_start, addr_end, task_type):
+    _id = 1
+
+    def __init__(self, addr_start: int, addr_end: int, task_type: "TaskType"):
+        self.id = Task._id
+        Task._id += 1
         self.addr_start = addr_start
         self.addr_end = addr_end
         self.task_type = task_type
-
-    def get_task_type(self):
-        return self.task_type
-
-    def get_addr_start(self):
-        return self.addr_start
-
-    def get_addr_end(self):
-        return self.addr_end
+        self.is_completed = False
 
     def __str__(self):
-        return f'task: task_type = {self.task_type}, addr_start = {self.addr_start}, addr_end = {self.addr_end}'
+        return (f"Task(id={self.id}, task_type={self.task_type}, "
+                f"addr_start={self.addr_start}, addr_end={self.addr_end}, "
+                f"is_completed={self.is_completed})")

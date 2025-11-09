@@ -1,51 +1,45 @@
 from components.TPC import TPC
-from components.Task import TaskType, Task
+from components.Task import Task
+from components.TaskType import TaskType
 from components.GlobalWorker import GlobalWorker
+from components.Unit import Unit
+from typing import List
 
-tpcs = [
-    TPC(name='TPC_1'),
-    # TPC(name='TPC_2'),
-    # TPC(name='TPC_3'),
-    # TPC(name='TPC_4'),
-    # TPC(name='TPC_5'),
-    # TPC(name='TPC_6'),
-    # TPC(name='TPC_7'),
-    # TPC(name='TPC_8'),
-]
 
-tasks = [
-    Task(0, 9, TaskType.VPU),
-    # Task(10, 19, TaskType.ME),
-    # Task(20, 29, TaskType.FE),
-]
+def main():
+    print("Start program")
 
-gw = GlobalWorker(tasks, tpcs)
-ticks = 5
+    TICK_COUNT = 5
 
-print('START PROGRAM')
-print('initial params:')
-print(gw)
-for tpc in tpcs:
-    print(tpc)
-for task in tasks:
-    print(task)
+    tasks = [
+        Task(0, 9, TaskType.VPU),
+        Task(10, 19, TaskType.ME),
+        Task(5, 14, TaskType.FE),
+    ]
 
-print('='*100)
-print('START PROCESS')
+    tpcs = [
+        TPC(name="TPC_1"),
+        # TPC(name='TPC_2'),
+        # TPC(name='TPC_3'),
+        # TPC(name='TPC_4'),
+        # TPC(name='TPC_5'),
+        # TPC(name='TPC_6'),
+        # TPC(name='TPC_7'),
+        # TPC(name='TPC_8'),
+    ]
 
-for t in range(ticks):
-    print(f'TICK: {t}')
-    gw.tick()
-    print(gw)
-    print('*'*50)
-    for tpc in tpcs:
-        tpc.tick()
-        print()
-        print(tpc)
-        print(tpc.TPC_cu)
-        print(tpc.FE_executor)
-        print(tpc.ME_executor)
-        print(tpc.VPU_executor)
-        print('*'*50)
+    gw = GlobalWorker("GlobalWorker", tasks, tpcs)
 
-    print('='*100)
+    units: List[Unit] = [gw, *tpcs]
+
+    for t in range(TICK_COUNT):
+        print(f"Tick: {t}")
+        for u in units:
+            u.tick()
+            print(u)
+
+    print("End program")
+
+
+if __name__ == "__main__":
+    main()

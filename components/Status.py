@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class Status(Enum):
     WAIT = 0
     COLLECT_TO_LOCAL = 2

@@ -1,56 +1,34 @@
-from .Tick import Tick
+from .Unit import Unit
 from .Status import Status
-from .Task import TaskType
 
-class TPC_Executor(Tick):
-    def __init__(self, task_type):
-        super().__init__()
-        self.task_type = task_type
-        self.active_task = None
+from typing import TYPE_CHECKING
 
-        self.STATUS_MAP = {
-            TaskType.VPU: Status.EXEC_VPU,
-            TaskType.ME: Status.EXEC_ME,
-            TaskType.FE: Status.EXEC_FE,
-        }
+if TYPE_CHECKING:
+    from .TaskType import TaskType
+    from .TPC import TPC
 
-    def add_task(self, task):
-        self.active_task = task
+
+class TPC_Executor(Unit):
+    def __init__(self, tpc: "TPC", task_type: "TaskType"):
+        super().__init__(f"{tpc.name}_Executor")
+        self._tpc = tpc
+        self._task_type = task_type
+        self._active_task = None
+
+    def get_active_task(self):
+        return self._active_task
+
+    def set_active_task(self, task):
+        self._active_task = task
 
     def _action(self):
-        print(f'TPC_Executor {self.task_type.value}: action')
-        match self.status:
-            case Status.WAIT:
-                self._wait()
-            case Status.SEND_TO_EXECUTE:
-                self._exec(self.active_task)
-            case Status.EXEC_VPU:
-                self._set_status(Status.WAIT)
-            case Status.EXEC_ME:
-                self._set_status(Status.WAIT)
-            case Status.EXEC_FE:
-                self._set_status(Status.WAIT)
-            case _:
-                print("Unknown Status")
-                return None
+        if not self._active_task:
+            return
 
-    def _wait(self):
-        print(f'TPC_Executor {self.task_type.value}: wait')
-        if self.active_task:
-            print(f'Start executing task {self.active_task.task_type}')
-            if self.task_type != self.active_task.task_type:
-                print(f'Wrong task type ({self.active_task.task_type})! This executor ({self.task_type}) cant work with that task type (({self.active_task.task_type}))')
-            else:
-                self._set_status(Status.SEND_TO_EXECUTE)
-
-    def _exec(self, task):
-        print(f'TPC_Executor {self.task_type.value}: exec')
-        new_status = self.STATUS_MAP[self.task_type]
-        if new_status is None:
-            print(f"Unknown task type: {self.task_type}")
-            return None
-        self._set_status(new_status)
-
-    def __str__(self):
-        status = self.print_status()
-        return f'TCP_Executor {self.task_type.value}: {status}'
+        match self._task_type:
+            case TaskType.VPU:
+                self._set_status(Status.EXEC_VPU)
+            case TaskType.ME:
+                self._set_status(Status.EXEC_ME)
+            case TaskType.FE:
+                self._set_status(Status.EXEC_FE)
