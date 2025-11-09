@@ -9,13 +9,17 @@ from typing import List
 def main():
     print("Start program")
 
-    TICK_COUNT = 5
+    TICK_COUNT = 25
 
     tasks = [
         Task(0, 9, TaskType.VPU),
         Task(10, 19, TaskType.ME),
         Task(5, 14, TaskType.FE),
     ]
+
+    print("\nInitial tasks:")
+    for t in tasks:
+        print(t)
 
     tpcs = [
         TPC(name="TPC_1"),
@@ -32,13 +36,27 @@ def main():
 
     units: List[Unit] = [gw, *tpcs]
 
+    for u in units:
+        print(u)
+
     for t in range(TICK_COUNT):
         print(f"Tick: {t}")
         for u in units:
             u.tick()
             print(u)
 
-    print("End program")
+    print("\nCompleted tasks:")
+    for t in gw.completed_tasks:
+        print(t)
+
+    print("\nOccupied HBM ranges:")
+    if gw.hbm:
+        for s, e, tpc in gw.hbm:
+            print(f"[{s}, {e}] → owned by {tpc.name if tpc else 'None'}")
+    else:
+        print("\nNo occupied HBM ranges")
+
+    print("\nEnd program")
 
 
 if __name__ == "__main__":

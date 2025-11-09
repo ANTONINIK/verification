@@ -3,6 +3,7 @@ from .TaskType import TaskType
 from .TPC_CU import TPC_CU
 from .TPC_Executor import TPC_Executor
 from typing import TYPE_CHECKING, Callable
+from .BColors import BColors
 
 if TYPE_CHECKING:
     from .Task import Task
@@ -10,7 +11,7 @@ if TYPE_CHECKING:
 
 class TPC(Unit):
     def __init__(self, name: str):
-        super().__init__(name)
+        super().__init__(name, BColors.OKGREEN, 1)
         self._VPU_executor = TPC_Executor(self, TaskType.VPU)
         self._ME_executor = TPC_Executor(self, TaskType.ME)
         self._FE_executor = TPC_Executor(self, TaskType.FE)
@@ -29,4 +30,4 @@ class TPC(Unit):
         self._FE_executor.tick()
 
     def __str__(self):
-        return f"{super().__str__()}\n{f"\t{self._VPU_executor}"}\n{f"\t{self._ME_executor}"}\n{f"\t{self._FE_executor}"}\n{f"\t{self._TPC_CU}"}"
+        return f"{super().__str__()}\n{f"{self._VPU_executor}"}\n{f"{self._ME_executor}"}\n{f"{self._FE_executor}"}\n{f"{self._TPC_CU}"}"
