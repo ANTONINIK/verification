@@ -7,11 +7,13 @@ class TPC_CU(Tick):
         super().__init__()
         self.queue = []
         self.active_task = None
-        self.VPU_executor = VPU_executor
-        self.ME_executor = ME_executor
-        self.FE_executor = FE_executor
         self.addr_start = addr_start
         self.addr_end = addr_end
+        self.executors = {
+            TaskType.VPU: VPU_executor,
+            TaskType.ME: ME_executor,
+            TaskType.FE: FE_executor,
+        }
 
     def _wait(self):
         print(f'TPC_CU: wait')
@@ -47,26 +49,33 @@ class TPC_CU(Tick):
                 self._send_to_execute(self.active_task)
             case _:
                 print("Unknown Status")
+                return None
 
-    def _send_to_execute(self, task):
-        match task.task_type:
-            case TaskType.VPU:
-                self.VPU_executor.add_task(self.active_task)
-            case TaskType.ME:
-                self.ME_executor.add_task(self.active_task)
-            case TaskType.FE:
-                self.FE_executor.add_task(self.active_task)
-            case _:
-                print("Unknown task type")
+    def _send_to_execute(self, task: Task):
+        print(f'TPC_CU: send_to_execute')
+        executor = self.executors[task.task_type]
+        if executor is None:
+            print(f"Unknown task type: {task.task_type}")
+            return None
 
+        if executor.active_task is None:
+            executor.add_task(task)
+        else:
+            self.queue.append(task)
+
+        print(f'TPC_CU: {self.active_task} ---> {executor}')
         self.active_task = None
         self.status = Status.WAIT
 
     def _send_to_global(self):
+        print(f'TPC_CU: send_to_global')
         self.addr_start = None
         self.addr_end = None
+        self.status = Status.WAIT
+        print('TPC_CU: Data sent to global memory')
 
     def _get_from_global(self, task:Task):
+        print(f'TPC_CU: get_from_global')
         if self.addr_start is None:
             self.addr_start = self.active_task.addr_start
             self.addr_end = self.active_task.addr_end
@@ -81,6 +90,7 @@ class TPC_CU(Tick):
 
     def add_task(self, task:Task):
         self.queue.append(task)
+        print(f'TPC_CU: {task} added to queue')
 
     def __str__(self):
         status = self.print_status()
