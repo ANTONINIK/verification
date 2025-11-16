@@ -4,6 +4,12 @@ from typing import TYPE_CHECKING, Callable, Optional
 from .TaskType import TaskType
 from .BColors import BColors
 
+EXEC_DURATION = {
+    Status.EXEC_VPU: 3,
+    Status.EXEC_ME: 3,
+    Status.EXEC_FE: 3,
+}
+
 
 if TYPE_CHECKING:
     from .Task import Task
@@ -17,6 +23,7 @@ class TPC_Executor(Unit):
         self._task_type: "TaskType" = task_type
         self._active_task: Optional["Task"] = None
         self._callback_on_complete: Optional[Callable[["Task"], None]] = None
+        self._current_tick: int = 0  # Track current tick
 
     def get_active_task(self) -> Optional["Task"]:
         return self._active_task
@@ -25,9 +32,11 @@ class TPC_Executor(Unit):
         self,
         task: "Task",
         callback_on_complete: Optional[Callable[["Task"], None]] = None,
+        current_tick: int = 0,
     ):
         self._active_task = task
         self._callback_on_complete = callback_on_complete
+        self._current_tick = current_tick
 
     def _action(self):
         match self._status:
@@ -49,10 +58,17 @@ class TPC_Executor(Unit):
                 self.set_status(Status.EXEC_FE)
 
     def _exec(self):
+        if self._active_task.actual_start_time is None:
+            self._active_task.actual_start_time = self._current_tick
+        
         self.log(f"Executing task {self._active_task}")
 
         self._active_task.executed_by = self.name
         self._active_task.is_completed = True
+        
+        exec_duration = EXEC_DURATION.get(self._status, 1)
+        self._active_task.actual_end_time = self._current_tick + exec_duration
+        
         self._callback_on_complete(self._active_task)
 
         self._active_task = None

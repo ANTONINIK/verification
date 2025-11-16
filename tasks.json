@@ -1,0 +1,69 @@
+{
+  "export_timestamp": "2025-11-16T15:40:51.474878",
+  "total_tasks": 3,
+  "tasks": [
+    {
+      "id": 763,
+      "type": "VPU",
+      "memory": {
+        "start": 0,
+        "end": 9,
+        "size": 10
+      },
+      "timing": {
+        "actual_start": 8,
+        "actual_end": 11,
+        "exec_time": 3,
+        "total_time": 23,
+        "start_time": 0,
+        "end_time": 23
+      },
+      "executor": "TPC_1_VPU_Executor",
+      "completed": true
+    },
+    {
+      "id": 764,
+      "type": "ME",
+      "memory": {
+        "start": 10,
+        "end": 19,
+        "size": 10
+      },
+      "timing": {
+        "actual_start": 13,
+        "actual_end": 16,
+        "exec_time": 3,
+        "total_time": 23,
+        "start_time": 0,
+        "end_time": 23
+      },
+      "executor": "TPC_1_ME_Executor",
+      "completed": true
+    },
+    {
+      "id": 765,
+      "type": "FE",
+      "memory": {
+        "start": 5,
+        "end": 14,
+        "size": 10
+      },
+      "timing": {
+        "actual_start": 22,
+        "actual_end": 25,
+        "exec_time": 3,
+        "total_time": 23,
+        "start_time": 0,
+        "end_time": 23
+      },
+      "executor": "TPC_1_FE_Executor",
+      "completed": true
+    }
+  ],
+  "summary": {
+    "min_actual_start": 8,
+    "max_actual_end": 25,
+    "total_execution_time": 23,
+    "avg_exec_time": 3.0
+  }
+}

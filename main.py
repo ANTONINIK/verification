@@ -1,4 +1,4 @@
-from components import CommandExecutor, Task, TaskType
+from components import CommandExecutor, Task, TaskType, TaskExporter, PlotGenerator
 
 
 def main():
@@ -16,9 +16,25 @@ def main():
     for t in tasks:
         print(t)
 
-    executor.execute(tasks)
+    completed_tasks, total_ticks = executor.execute(tasks)
 
     executor.print_summary()
+    
+    print("\n" + "="*60)
+    print("Completed tasks with timing information:")
+    print("="*60)
+    for t in completed_tasks:
+        print(t)
+    
+    print("\n" + "="*60)
+    print("Exporting results to tasks.json...")
+    print("="*60)
+    TaskExporter.export_to_json(completed_tasks, "tasks.json")
+    
+    print("\n" + "="*60)
+    print("Generating visualization plots...")
+    print("="*60)
+    PlotGenerator.generate_all_plots(completed_tasks, total_ticks, output_dir=".")
 
     print("End program")
 

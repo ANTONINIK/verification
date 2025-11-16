@@ -33,6 +33,9 @@ class CommandExecutor:
         self.global_worker._queue = tasks.copy()
 
         while self._current_tick < self.max_ticks:
+            for tpc in self.tpcs:
+                tpc.set_current_tick(self._current_tick)
+            
             for unit in self.units:
                 unit.tick()
                 if _ENABLE_PRINTS:

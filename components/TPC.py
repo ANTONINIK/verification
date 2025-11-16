@@ -16,6 +16,13 @@ class TPC(Unit):
         self._ME_executor = TPC_Executor(self, TaskType.ME)
         self._FE_executor = TPC_Executor(self, TaskType.FE)
         self._TPC_CU = TPC_CU(self)
+        self._current_tick = 0  # Track current tick
+
+    def set_current_tick(self, tick: int):
+        self._current_tick = tick
+        self._VPU_executor._current_tick = tick
+        self._ME_executor._current_tick = tick
+        self._FE_executor._current_tick = tick
 
     def get_total_task_count(self) -> int:
         return self._TPC_CU.get_queue_length()
