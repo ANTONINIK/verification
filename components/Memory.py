@@ -17,20 +17,27 @@ class Memory:
         return not (a_end < b_start or a_start > b_end)
 
     @staticmethod
-    def check_conflict(ranges: List[RangeRecord], start: int, end: int, owner) -> bool:
+    def check_conflict(ranges: List[RangeRecord], start: int, end: int, owner, ignore_none: bool = False) -> bool:
         for s, e, o in ranges:
             if o is owner:
                 continue
-            if o is not None and Memory.ranges_overlap(start, end, s, e):
+            if ignore_none and o is None:
+                continue
+            if Memory.ranges_overlap(start, end, s, e):
                 return True
         return False
 
     @staticmethod
-    def allocate(ranges: List[RangeRecord], start: int, end: int, owner: Any) -> bool:
+    def allocate(ranges: List[RangeRecord], start: int, end: int, owner: Any, ignore_none: bool = False) -> bool:
         if start > end:
             raise Exception(f"Invalid memory range: start ({start}) > end ({end})")
 
-        if Memory.check_conflict(ranges, start, end, owner):
+        for idx, (s, e, o) in enumerate(ranges):
+            if s == start and e == end and o is None:
+                ranges[idx] = (start, end, owner)
+                return True
+
+        if Memory.check_conflict(ranges, start, end, owner, ignore_none=ignore_none):
             raise Exception(f"Memory range conflict detected for [{start}, {end}]")
 
         ranges.append((start, end, owner))

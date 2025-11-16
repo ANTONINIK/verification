@@ -50,7 +50,8 @@ class TPC_Executor(Unit):
 
     def _exec(self):
         self.log(f"Executing task {self._active_task}")
-        
+
+        self._active_task.executed_by = self.name
         self._active_task.is_completed = True
         self._callback_on_complete(self._active_task)
 

@@ -1,15 +1,10 @@
-from components.TPC import TPC
-from components.Task import Task
-from components.TaskType import TaskType
-from components.GlobalWorker import GlobalWorker
-from components.Unit import Unit
-from typing import List
+from components import CommandExecutor, Task, TaskType
 
 
 def main():
     print("Start program")
 
-    TICK_COUNT = 25
+    executor = CommandExecutor(tpc_count=1)
 
     tasks = [
         Task(0, 9, TaskType.VPU),
@@ -21,43 +16,27 @@ def main():
     for t in tasks:
         print(t)
 
-    tpcs = [
-        TPC(name="TPC_1"),
-        # TPC(name='TPC_2'),
-        # TPC(name='TPC_3'),
-        # TPC(name='TPC_4'),
-        # TPC(name='TPC_5'),
-        # TPC(name='TPC_6'),
-        # TPC(name='TPC_7'),
-        # TPC(name='TPC_8'),
-    ]
+    executor.execute(tasks)
 
-    gw = GlobalWorker("GlobalWorker", tasks, tpcs)
+    executor.print_summary()
 
-    units: List[Unit] = [gw, *tpcs]
-
-    for u in units:
-        print(u)
-
-    for t in range(TICK_COUNT):
-        print(f"Tick: {t}")
-        for u in units:
-            u.tick()
-            print(u)
-
-    print("\nCompleted tasks:")
-    for t in gw.completed_tasks:
-        print(t)
-
-    print("\nOccupied HBM ranges:")
-    if gw.hbm:
-        for s, e, tpc in gw.hbm:
-            print(f"[{s}, {e}] → owned by {tpc.name if tpc else 'None'}")
-    else:
-        print("\nNo occupied HBM ranges")
-
-    print("\nEnd program")
+    print("End program")
 
 
 if __name__ == "__main__":
+    import sys
+
+    try:
+        import pytest
+    except Exception:
+        print(
+            "pytest is required to run tests before starting. Install it with: python -m pip install pytest"
+        )
+        sys.exit(1)
+
+    rc = pytest.main(["-q", "TestCommandExecutor.py"])
+    if rc != 0:
+        print(f"Tests failed (exit code={rc}). Aborting run.")
+        sys.exit(rc)
+
     main()

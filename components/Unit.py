@@ -2,6 +2,10 @@ from abc import ABC, abstractmethod
 from .Status import Status
 from .BColors import BColors
 
+_ENABLE_PRINTS = True
+
+_ENABLE_LOGS = True
+
 TICK_COUNT_BY_STATUS = {
     Status.WAIT: 0,
     Status.COLLECT_TO_LOCAL: 2,
@@ -11,7 +15,6 @@ TICK_COUNT_BY_STATUS = {
     Status.EXEC_FE: 3,
 }
 
-ENABLE_LOGGING = True
 
 class Unit(ABC):
     def __init__(self, name: str, color: str, level: int = 0):
@@ -22,8 +25,10 @@ class Unit(ABC):
         self._ticker: int = TICK_COUNT_BY_STATUS[self._status]
 
     def log(self, message: str):
-        if ENABLE_LOGGING:
-            print(f"{self.color}{'\t' * self.level}{self.name}: {message}{BColors.ENDC}")
+        if _ENABLE_LOGS and _ENABLE_PRINTS:
+            print(
+                f"{self.color}{'\t' * self.level}{self.name}: {message}{BColors.ENDC}"
+            )
 
     def tick(self):
         if self._ticker < 1:

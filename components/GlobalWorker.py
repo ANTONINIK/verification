@@ -43,12 +43,23 @@ class GlobalWorker(Unit):
         self.log(f"Assigning {candidate_task} to {assigned_tpc.name}")
         Memory.allocate(self.hbm, candidate_task.addr_start, candidate_task.addr_end, assigned_tpc)
 
-        # 4. Назначаем задачу TPC
+        # 4. Назначаем задачу TPC и сохраняем ссылку на TPC
+        candidate_task.assigned_tpc = assigned_tpc
         assigned_tpc.add_task(self._queue.pop(0), self._on_complete_task)
 
     def _on_complete_task(self, task: "Task"):
         self.log(f"{task} completed and collected")
         self.completed_tasks.append(task)
+        
+        if task.assigned_tpc is not None:
+            cu = task.assigned_tpc._TPC_CU
+            if not cu._queue and not cu._noc:
+                self.log(f"Releasing HBM for {task}")
+                Memory.release(self.hbm, task.addr_start, task.addr_end)
+            else:
+                self.log(f"HBM not released (queue={len(cu._queue)}, NOC={len(cu._noc)})")
+        else:
+            self.log(f"Task has no assigned_tpc, cannot release HBM")
 
     def _select_least_loaded_tpc(self) -> "TPC":
         return min(self._tpcs, key=lambda t: t.get_total_task_count())

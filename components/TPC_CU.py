@@ -38,8 +38,11 @@ class TPC_CU(Unit):
     def _action(self):
         self.log(f"Queue length: {len(self._queue)}")
 
-        if not self._queue and self._noc:
-            self.set_status(Status.SEND_TO_GLOBAL)
+        if self._noc:
+            for s, e, tpc in self._noc:
+                self.log(f"Occupied NOC range: [{s}, {e}] -> {tpc.name if tpc else 'None'}")
+
+        self.log(f"Status: {self._status.name}")
 
         match self._status:
             case Status.WAIT:
@@ -64,7 +67,7 @@ class TPC_CU(Unit):
         task = self._queue[0]
         executor = self._get_executor(task.task_type)
 
-        if Memory.check_conflict(self._noc, task.addr_start, task.addr_end, executor):
+        if Memory.check_conflict(self._noc, task.addr_start, task.addr_end, executor, ignore_none=True):
             self.log("Memory conflict detected")
             return
 
@@ -72,7 +75,7 @@ class TPC_CU(Unit):
             self.log("Executor is busy")
             return
 
-        Memory.allocate(self._noc, task.addr_start, task.addr_end, executor)
+        Memory.allocate(self._noc, task.addr_start, task.addr_end, executor, ignore_none=True)
         executor.set_active_task(self._queue.pop(0), self._on_complete_task)
         self.set_status(Status.WAIT)
 
