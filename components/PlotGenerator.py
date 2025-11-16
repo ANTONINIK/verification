@@ -1,8 +1,4 @@
-"""
-PlotGenerator: Generate visualization plots for task execution and TPC utilization
-"""
-import json
-from typing import List, Dict, Tuple
+from typing import List
 from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -11,27 +7,18 @@ from .Task import Task
 
 
 class PlotGenerator:
-    """Generate various plots for analyzing task execution and TPC utilization"""
-    
-    # Color mapping for different task types
     TASK_COLORS = {
-        'VPU': '#FF6B6B',  # Red
-        'ME': '#4ECDC4',   # Teal
-        'FE': '#45B7D1',   # Blue
+        'VPU': '#FF6B6B',
+        'ME': '#4ECDC4',
+        'FE': '#45B7D1',
     }
     
     @staticmethod
     def plot_gantt_chart(tasks: List[Task], filename: str = "gantt_chart.png") -> None:
-        """
-        Generate Gantt chart showing task execution timeline
-        X-axis: simulation ticks
-        Y-axis: TPC executors
-        """
         if not tasks:
             print("No tasks to plot")
             return
         
-        # Group tasks by executor
         executors = {}
         for task in tasks:
             executor = task.executed_by or "Unknown"
@@ -42,7 +29,6 @@ class PlotGenerator:
         executor_list = sorted(executors.keys())
         fig, ax = plt.subplots(figsize=(14, 6))
         
-        # Plot each task as a rectangle
         y_pos = 0
         y_labels = []
         y_ticks = []
@@ -79,7 +65,6 @@ class PlotGenerator:
             
             y_pos += 1
         
-        # Configure axes
         ax.set_ylim(-1, y_pos)
         ax.set_xlim(0, max(t.actual_end_time for t in tasks if t.actual_end_time is not None) + 1)
         ax.set_yticks(y_ticks)
@@ -88,10 +73,8 @@ class PlotGenerator:
         ax.set_ylabel('TPC Executors', fontsize=12, fontweight='bold')
         ax.set_title('Task Execution Timeline (Gantt Chart)', fontsize=14, fontweight='bold')
         
-        # Add grid
         ax.grid(True, axis='x', alpha=0.3, linestyle='--')
         
-        # Add legend
         legend_elements = [
             mpatches.Patch(facecolor=PlotGenerator.TASK_COLORS['VPU'], edgecolor='black', label='VPU'),
             mpatches.Patch(facecolor=PlotGenerator.TASK_COLORS['ME'], edgecolor='black', label='ME'),
@@ -106,15 +89,10 @@ class PlotGenerator:
     
     @staticmethod
     def plot_tpc_utilization(tasks: List[Task], total_ticks: int, filename: str = "tpc_utilization.png") -> None:
-        """
-        Generate bar chart showing TPC utilization percentage
-        Shows how much time each executor spent working vs idle
-        """
         if not tasks:
             print("No tasks to plot")
             return
         
-        # Group tasks by executor
         executors_time = {}
         for task in tasks:
             executor = task.executed_by or "Unknown"
@@ -133,7 +111,6 @@ class PlotGenerator:
         bars = ax.bar(executor_names, utilization_percentages, color=['#FF6B6B', '#4ECDC4', '#45B7D1'], 
                      edgecolor='black', linewidth=2, alpha=0.8)
         
-        # Add percentage labels on bars
         for bar, pct in zip(bars, utilization_percentages):
             height = bar.get_height()
             ax.text(
@@ -160,15 +137,10 @@ class PlotGenerator:
     
     @staticmethod
     def plot_task_progress(tasks: List[Task], filename: str = "task_progress.png") -> None:
-        """
-        Generate line plot showing task completion over time
-        Shows cumulative number of completed tasks at each time step
-        """
         if not tasks:
             print("No tasks to plot")
             return
         
-        # Sort tasks by completion end time
         sorted_tasks = sorted(
             [t for t in tasks if t.actual_end_time is not None],
             key=lambda t: t.actual_end_time
@@ -182,11 +154,9 @@ class PlotGenerator:
         ax.plot(end_times, completed_count, marker='o', linewidth=2.5, markersize=8, 
                color='#4ECDC4', markerfacecolor='#FF6B6B', markeredgewidth=2, markeredgecolor='black')
         
-        # Add step effect (stairs)
         ax.step(end_times, completed_count, where='post', linewidth=2.5, 
                color='#45B7D1', alpha=0.5, linestyle='--')
         
-        # Add task labels
         for end_time, count, task in zip(end_times, completed_count, sorted_tasks):
             ax.text(end_time, count + 0.05, f'T{task.id}', ha='center', va='bottom', 
                    fontsize=9, fontweight='bold')
@@ -204,15 +174,10 @@ class PlotGenerator:
     
     @staticmethod
     def plot_memory_timeline(tasks: List[Task], filename: str = "memory_timeline.png") -> None:
-        """
-        Generate Gantt-like chart showing memory usage over time
-        Visualizes which memory ranges are occupied and by which tasks
-        """
         if not tasks:
             print("No tasks to plot")
             return
         
-        # Sort tasks by start time
         sorted_tasks = sorted(
             [t for t in tasks if t.actual_start_time is not None],
             key=lambda t: t.actual_start_time
@@ -220,16 +185,13 @@ class PlotGenerator:
         
         fig, ax = plt.subplots(figsize=(14, 8))
         
-        # Find memory range
         min_addr = min(t.addr_start for t in sorted_tasks)
         max_addr = max(t.addr_end for t in sorted_tasks)
         memory_height = max_addr - min_addr + 1
         
-        # Plot memory blocks
         for i, task in enumerate(sorted_tasks):
             color = PlotGenerator.TASK_COLORS.get(task.task_type.name, '#95E1D3')
             
-            # Draw rectangle for memory block over time
             rect = Rectangle(
                 (task.actual_start_time, task.addr_start),
                 task.latency,
@@ -241,7 +203,6 @@ class PlotGenerator:
             )
             ax.add_patch(rect)
             
-            # Add task label
             ax.text(
                 task.actual_start_time + task.latency / 2,
                 task.addr_start + (task.addr_end - task.addr_start) / 2,
@@ -260,7 +221,6 @@ class PlotGenerator:
         ax.set_title('Memory Usage Timeline', fontsize=14, fontweight='bold')
         ax.grid(True, alpha=0.3, linestyle='--')
         
-        # Add legend
         legend_elements = [
             mpatches.Patch(facecolor=PlotGenerator.TASK_COLORS['VPU'], edgecolor='black', label='VPU'),
             mpatches.Patch(facecolor=PlotGenerator.TASK_COLORS['ME'], edgecolor='black', label='ME'),
@@ -275,9 +235,6 @@ class PlotGenerator:
     
     @staticmethod
     def generate_all_plots(tasks: List[Task], total_ticks: int, output_dir: str = ".") -> None:
-        """
-        Generate all available plots
-        """
         output_path = Path(output_dir)
         output_path.mkdir(exist_ok=True)
         

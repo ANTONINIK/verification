@@ -1,6 +1,3 @@
-"""
-TaskExporter: Export completed tasks to JSON file for analysis and plotting
-"""
 import json
 from typing import List
 from datetime import datetime
@@ -8,14 +5,8 @@ from .Task import Task
 
 
 class TaskExporter:
-    """Export completed tasks in JSON format suitable for analysis and plotting"""
-    
     @staticmethod
     def export_to_json(tasks: List[Task], filename: str) -> None:
-        """
-        Export tasks to JSON format
-        Includes all task properties for complete data preservation
-        """
         if not tasks:
             print("No tasks to export")
             return
@@ -67,7 +58,4 @@ class TaskExporter:
     
     @staticmethod
     def export(tasks: List[Task], filename: str = "tasks.json") -> None:
-        """
-        Export tasks to JSON file
-        """
         TaskExporter.export_to_json(tasks, filename)
