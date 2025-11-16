@@ -47,11 +47,16 @@ class GlobalWorker(Unit):
                     self.log("All TPCs are busy or memory ranges conflict, waiting...")
                     break
 
-            self.log(f"Assigning {candidate_task} to {assigned_tpc.name}")
-            Memory.allocate(self.hbm, candidate_task.addr_start, candidate_task.addr_end, assigned_tpc)
+            self.log(f"Attempting to assign {candidate_task} to {assigned_tpc.name}")
 
+            accepted = assigned_tpc.add_task(candidate_task, self._on_complete_task)
+            if not accepted:
+                self.log(f"{assigned_tpc.name} rejected task (CU full). Will retry later.")
+                break
+
+            Memory.allocate(self.hbm, candidate_task.addr_start, candidate_task.addr_end, assigned_tpc)
             candidate_task.assigned_tpc = assigned_tpc
-            assigned_tpc.add_task(self._queue.pop(0), self._on_complete_task)
+            self._queue.pop(0)
 
     def _on_complete_task(self, task: "Task"):
         self.log(f"{task} completed and collected")

@@ -46,3 +46,12 @@ class Memory:
     @staticmethod
     def release(ranges: List[RangeRecord], start: int, end: int) -> None:
         ranges[:] = [(s, e, o) for (s, e, o) in ranges if not (s == start and e == end)]
+
+    @staticmethod   
+    def free_owner(ranges: List[RangeRecord], start: int, end: int):
+        for i, (s, e, o) in enumerate(ranges):
+            if s == start and e == end:
+                ranges[i] = (s, e, None)
+                return True
+        return False
+    

@@ -8,8 +8,8 @@ _ENABLE_LOGS = True
 
 TICK_COUNT_BY_STATUS = {
     Status.WAIT: 0,
-    Status.COLLECT_TO_LOCAL: 2,
-    Status.SEND_TO_GLOBAL: 2,
+    Status.COLLECT_TO_LOCAL: 5,
+    Status.SEND_TO_GLOBAL: 5,
     Status.EXEC_VPU: 3,
     Status.EXEC_ME: 3,
     Status.EXEC_FE: 3,
@@ -41,7 +41,7 @@ class Unit(ABC):
 
     def set_status(self, status: Status):
         self._status = status
-        self._ticker = TICK_COUNT_BY_STATUS.get(status)
+        self._ticker = TICK_COUNT_BY_STATUS.get(status, 0)
 
     @abstractmethod
     def _action(self):

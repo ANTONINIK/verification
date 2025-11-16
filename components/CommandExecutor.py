@@ -7,7 +7,7 @@ from .Time import Time
 
 
 class CommandExecutor:
-    def __init__(self, tpc_count: int = 1, max_ticks: int = 1000):
+    def __init__(self, tpc_count: int = 1, max_ticks: int = 10000):
         self.tpc_count = tpc_count
         self.max_ticks = max_ticks
         self.time = Time()

@@ -58,19 +58,20 @@ class TPC_Executor(Unit):
                 self.set_status(Status.EXEC_FE)
 
     def _exec(self):
-        if self._active_task.actual_start_time is None:
-            self._active_task.actual_start_time = self._current_tick
-        
         self.log(f"Executing task {self._active_task}")
 
-        self._active_task.executed_by = self.name
-        self._active_task.is_completed = True
-        
         exec_duration = EXEC_DURATION.get(self._status, 1)
-        self._active_task.actual_end_time = self._current_tick + exec_duration
-        
-        self._callback_on_complete(self._active_task)
 
+        executing_task = self._active_task
         self._active_task = None
+
+        executing_task.executed_by = self.name
+        executing_task.is_completed = True
+
+        executing_task.actual_start_time = self._current_tick - exec_duration
+        executing_task.actual_end_time = self._current_tick
+
+        self._callback_on_complete(executing_task)
         self._callback_on_complete = None
+
         self.set_status(Status.WAIT)

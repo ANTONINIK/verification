@@ -34,7 +34,7 @@ class TPC(Unit):
         return cu_queue_len + noc_used + active_executors
 
     def add_task(self, task: "Task", callback_on_complete: Callable[["Task"], None]):
-        self._TPC_CU.add_task(task, callback_on_complete)
+        return self._TPC_CU.add_task(task, callback_on_complete)
 
     def _action(self):
         self._TPC_CU.tick()
