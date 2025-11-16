@@ -1,14 +1,8 @@
 from .Unit import Unit
-from .Status import Status
+from .Status import Status, TICK_COUNT_BY_STATUS
 from typing import TYPE_CHECKING, Callable, Optional
 from .TaskType import TaskType
 from .BColors import BColors
-
-EXEC_DURATION = {
-    Status.EXEC_VPU: 3,
-    Status.EXEC_ME: 3,
-    Status.EXEC_FE: 3,
-}
 
 
 if TYPE_CHECKING:
@@ -60,7 +54,6 @@ class TPC_Executor(Unit):
     def _exec(self):
         self.log(f"Executing task {self._active_task}")
 
-        exec_duration = EXEC_DURATION.get(self._status, 1)
 
         executing_task = self._active_task
         self._active_task = None
@@ -68,6 +61,7 @@ class TPC_Executor(Unit):
         executing_task.executed_by = self.name
         executing_task.is_completed = True
 
+        exec_duration = TICK_COUNT_BY_STATUS.get(self._status, 1)
         executing_task.actual_start_time = self._current_tick - exec_duration
         executing_task.actual_end_time = self._current_tick
 
