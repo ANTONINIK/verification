@@ -16,7 +16,7 @@ class TPC_CU(Unit):
         super().__init__(f"{tpc.name}_CU", BColors.WARNING, 2)
         self._queue: List["Task"] = []
         self._tpc: "TPC" = tpc
-        self._noc: List[Tuple[int, int, "TPC_Executor" | None]] = []
+        self.noc: List[Tuple[int, int, "TPC_Executor" | None]] = []
         self._callback_on_complete_by_task: Dict["Task", Callable[["Task"], None]] = {}
 
     def get_queue_length(self) -> int:
@@ -29,17 +29,17 @@ class TPC_CU(Unit):
 
     def _on_complete_task(self, task: "Task"):
         self.log(f"Releasing memory for completed task {task}")
-        Memory.release(self._noc, task.addr_start, task.addr_end)
+        Memory.release(self.noc, task.addr_start, task.addr_end)
         self._callback_on_complete_by_task.pop(task, None)(task)
 
     def _is_in_noc(self, task: "Task") -> bool:
-        return Memory.is_contained(self._noc, task.addr_start, task.addr_end)
+        return Memory.is_contained(self.noc, task.addr_start, task.addr_end)
 
     def _action(self):
         self.log(f"Queue length: {len(self._queue)}")
 
-        if self._noc:
-            for s, e, tpc in self._noc:
+        if self.noc:
+            for s, e, tpc in self.noc:
                 self.log(f"Occupied NOC range: [{s}, {e}] -> {tpc.name if tpc else 'None'}")
 
         self.log(f"Status: {self._status.name}")
@@ -67,7 +67,7 @@ class TPC_CU(Unit):
         task = self._queue[0]
         executor = self._get_executor(task.task_type)
 
-        if Memory.check_conflict(self._noc, task.addr_start, task.addr_end, executor, ignore_none=True):
+        if Memory.check_conflict(self.noc, task.addr_start, task.addr_end, executor, ignore_none=True):
             self.log("Memory conflict detected")
             return
 
@@ -75,21 +75,21 @@ class TPC_CU(Unit):
             self.log("Executor is busy")
             return
 
-        Memory.allocate(self._noc, task.addr_start, task.addr_end, executor, ignore_none=True)
+        Memory.allocate(self.noc, task.addr_start, task.addr_end, executor, ignore_none=True)
         executor.set_active_task(self._queue.pop(0), self._on_complete_task)
         self.set_status(Status.WAIT)
 
     def _collect_to_local(self):
         task = self._queue[0]
         self.log(f"Loading {task} from global memory")
-        self._noc.append((task.addr_start, task.addr_end, None))
+        self.noc.append((task.addr_start, task.addr_end, None))
         self.set_status(Status.WAIT)
 
     def _send_to_global(self):
         self.log("Sending task results to global memory")
-        if self._noc:
-            start, end, _ = self._noc.pop(0)
-            Memory.release(self._noc, start, end)
+        if self.noc:
+            start, end, _ = self.noc.pop(0)
+            Memory.release(self.noc, start, end)
         self.set_status(Status.WAIT)
 
     def _get_executor(self, task_type: "TaskType") -> "TPC_Executor":

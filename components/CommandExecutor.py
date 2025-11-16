@@ -76,7 +76,7 @@ class CommandExecutor:
 
         for tpc in self.tpcs:
             tpc._TPC_CU._queue.clear()
-            tpc._TPC_CU._noc.clear()
+            tpc._TPC_CU.noc.clear()
             tpc._TPC_CU._callback_on_complete_by_task.clear()
             tpc._TPC_CU.set_status(tpc._TPC_CU._status.__class__.WAIT)
 
@@ -103,7 +103,7 @@ class CommandExecutor:
                 if executor._active_task is not None:
                     return False
 
-            if tpc._TPC_CU._noc:
+            if tpc._TPC_CU.noc:
                 return False
 
         return True
@@ -114,7 +114,7 @@ class CommandExecutor:
         for task in completed_tasks:
             if task.assigned_tpc is not None:
                 cu = task.assigned_tpc._TPC_CU
-                if not cu._queue and not cu._noc:
+                if not cu._queue and not cu.noc:
                     if any(
                         (s, e) == (task.addr_start, task.addr_end)
                         for s, e, _ in self.global_worker.hbm

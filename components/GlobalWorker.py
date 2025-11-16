@@ -28,6 +28,10 @@ class GlobalWorker(Unit):
 
         self.log(f"Assigned TPC from HBM range: {assigned_tpc}")
 
+        if self.hbm:
+            for s, e, tpc in self.hbm:
+                self.log(f"Occupied HBM range: [{s}, {e}] -> {tpc.name if tpc else 'None'}")
+
         # 2. Если нет, ищем наименее загруженный TPC
         if assigned_tpc is None:
             for tpc in sorted(self._tpcs, key=lambda t: t.get_total_task_count()):
@@ -53,11 +57,11 @@ class GlobalWorker(Unit):
         
         if task.assigned_tpc is not None:
             cu = task.assigned_tpc._TPC_CU
-            if not cu._queue and not cu._noc:
+            if not cu._queue and not cu.noc:
                 self.log(f"Releasing HBM for {task}")
                 Memory.release(self.hbm, task.addr_start, task.addr_end)
             else:
-                self.log(f"HBM not released (queue={len(cu._queue)}, NOC={len(cu._noc)})")
+                self.log(f"HBM not released (queue={len(cu._queue)}, NOC={len(cu.noc)})")
         else:
             self.log(f"Task has no assigned_tpc, cannot release HBM")
 
