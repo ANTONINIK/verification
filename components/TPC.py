@@ -16,7 +16,7 @@ class TPC(Unit):
         self._ME_executor = TPC_Executor(self, TaskType.ME)
         self._FE_executor = TPC_Executor(self, TaskType.FE)
         self._TPC_CU = TPC_CU(self)
-        self._current_tick = 0  # Track current tick
+        self._current_tick = 0
 
     def set_current_tick(self, tick: int):
         self._current_tick = tick
@@ -26,6 +26,12 @@ class TPC(Unit):
 
     def get_total_task_count(self) -> int:
         return self._TPC_CU.get_queue_length()
+
+    def get_workload(self) -> int:
+        cu_queue_len = self._TPC_CU.get_queue_length()
+        noc_used = len(self._TPC_CU.noc)
+        active_executors = sum(1 for ex in (self._VPU_executor, self._ME_executor, self._FE_executor) if ex.get_active_task() is not None)
+        return cu_queue_len + noc_used + active_executors
 
     def add_task(self, task: "Task", callback_on_complete: Callable[["Task"], None]):
         self._TPC_CU.add_task(task, callback_on_complete)

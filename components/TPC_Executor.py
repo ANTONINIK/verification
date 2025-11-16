@@ -23,7 +23,7 @@ class TPC_Executor(Unit):
         self._task_type: "TaskType" = task_type
         self._active_task: Optional["Task"] = None
         self._callback_on_complete: Optional[Callable[["Task"], None]] = None
-        self._current_tick: int = 0  # Track current tick
+        self._current_tick: int = 0
 
     def get_active_task(self) -> Optional["Task"]:
         return self._active_task

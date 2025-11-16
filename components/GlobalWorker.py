@@ -28,35 +28,30 @@ class GlobalWorker(Unit):
         if not self._queue:
             return
 
-        candidate_task = self._queue[0]
+        while self._queue:
+            candidate_task = self._queue[0]
 
-        # 1. Проверяем, есть ли уже TPC, которому принадлежит диапазон HBM
-        assigned_tpc = self._find_tpc_by_hbm_range(candidate_task)
-
-        self.log(f"Assigned TPC from HBM range: {assigned_tpc}")
-
-        # 2. Если нет, ищем наименее загруженный TPC
-        if assigned_tpc is None:
-            for tpc in sorted(self._tpcs, key=lambda t: t.get_total_task_count()):
-                if not any(Memory.ranges_overlap(
-                    candidate_task.addr_start, candidate_task.addr_end, s, e
-                ) for s, e, _ in self.hbm):
-                    assigned_tpc = tpc
-                    break
+            assigned_tpc = self._find_tpc_by_hbm_range(candidate_task)
+            self.log(f"Assigned TPC from HBM range: {assigned_tpc}")
 
             if assigned_tpc is None:
-                self.log("All TPCs are busy or memory ranges conflict, waiting...")
-                return
+                for tpc in sorted(self._tpcs, key=lambda t: (t.get_workload(), t.get_total_task_count())):
+                    if not any(
+                        Memory.ranges_overlap(candidate_task.addr_start, candidate_task.addr_end, s, e)
+                        for s, e, _ in self.hbm
+                    ):
+                        assigned_tpc = tpc
+                        break
 
-        # 3. Резервируем диапазон памяти
-        self.log(f"Assigning {candidate_task} to {assigned_tpc.name}")
-        Memory.allocate(
-            self.hbm, candidate_task.addr_start, candidate_task.addr_end, assigned_tpc
-        )
+                if assigned_tpc is None:
+                    self.log("All TPCs are busy or memory ranges conflict, waiting...")
+                    break
 
-        # 4. Назначаем задачу TPC и сохраняем ссылку на TPC
-        candidate_task.assigned_tpc = assigned_tpc
-        assigned_tpc.add_task(self._queue.pop(0), self._on_complete_task)
+            self.log(f"Assigning {candidate_task} to {assigned_tpc.name}")
+            Memory.allocate(self.hbm, candidate_task.addr_start, candidate_task.addr_end, assigned_tpc)
+
+            candidate_task.assigned_tpc = assigned_tpc
+            assigned_tpc.add_task(self._queue.pop(0), self._on_complete_task)
 
     def _on_complete_task(self, task: "Task"):
         self.log(f"{task} completed and collected")

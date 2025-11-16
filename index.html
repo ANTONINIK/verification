@@ -75,18 +75,43 @@
             margin: 8px 0;
             line-height: 1.6;
         }
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📊 Task Execution Analysis Dashboard</h1>
         
-        <div class="summary">
+        <div id="loading">
+            <div class="spinner"></div>
+            <p>Loading simulation data...</p>
+        </div>
+        
+        <div class="summary" id="summary">
             <h2>Simulation Summary</h2>
-            <p><strong>Total Tasks:</strong> 3</p>
-            <p><strong>Total Simulation Time:</strong> 23 ticks</p>
-            <p><strong>Task Types:</strong> VPU, ME, FE</p>
-            <p><strong>TPC Count:</strong> 1 (TPC_1)</p>
+            <p><strong>Total Tasks:</strong> <span id="totalTasks">-</span></p>
+            <p><strong>Total Simulation Time:</strong> <span id="totalTime">-</span> ticks</p>
+            <p><strong>Task Types:</strong> <span id="taskTypes">-</span></p>
+            <p><strong>TPC Count:</strong> <span id="tpcCount">-</span></p>
+            <p><strong>Last Updated:</strong> <span id="lastUpdated">-</span></p>
         </div>
         
         <div class="gallery">
@@ -123,5 +148,66 @@
             </div>
         </div>
     </div>
+
+    <script>
+        async function loadTasksData() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+
+                const response = await fetch('tasks.json');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+
+                updateSummary(data);
+            } catch (error) {
+                console.error('Error loading tasks.json:', error);
+                document.getElementById('loading').innerHTML = 
+                    '<p style="color: #d32f2f;">Error loading tasks.json: ' + error.message + '</p>';
+            }
+        }
+
+        function updateSummary(data) {
+            const taskTypes = new Set();
+            const tpcExecutors = new Set();
+            
+            data.tasks.forEach(task => {
+                taskTypes.add(task.type);
+                const tpcMatch = task.executor.match(/TPC_\d+/);
+                if (tpcMatch) {
+                    tpcExecutors.add(tpcMatch[0]);
+                }
+            });
+
+            let maxEnd = 0;
+            data.tasks.forEach(task => {
+                const taskEnd = task.timing.end_time;
+                if (taskEnd > maxEnd) {
+                    maxEnd = taskEnd;
+                }
+            });
+
+            const taskTypesStr = Array.from(taskTypes).sort().join(', ');
+            const tpcList = Array.from(tpcExecutors).sort().join(', ');
+            const tpcCount = tpcExecutors.size;
+
+            const timestamp = new Date(data.export_timestamp).toLocaleString();
+
+            document.getElementById('totalTasks').textContent = data.total_tasks;
+            document.getElementById('totalTime').textContent = maxEnd;
+            document.getElementById('taskTypes').textContent = taskTypesStr;
+            document.getElementById('tpcCount').textContent = tpcCount + ' (' + tpcList + ')';
+            document.getElementById('lastUpdated').textContent = timestamp;
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadTasksData);
+        } else {
+            loadTasksData();
+        }
+    </script>
 </body>
 </html>
